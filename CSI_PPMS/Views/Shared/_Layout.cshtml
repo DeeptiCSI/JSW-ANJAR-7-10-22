@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title id="title">@ViewBag.Title</title>
+    <link rel="shortcut icon" href="#">
+    <link href="~/CSS/Main.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/js/all.min.js"
+            integrity="sha512-6PM0qYu5KExuNcKt5bURAoT6KCThUmHRewN3zUFNaoI6Di7XJPTMoT6K0nsagZKk2OB4L7E3q1uQKHNHd4stIQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="~/Scripts/Accounts/Accounts.js"></script>
+    <script src="~/Scripts/Plate/Plate.js"></script>
+    <script src="~/Scripts/Reports/Reports.js"></script>
+    <script src="~/Scripts/Configure/Configure.js"></script>
+</head>
+<body> 
+    <div class="row" style="height:100%;width:100%;margin:0;">
+        <div class="Headerarea" style="height:11vh;width:100%;padding:0">
+            <div style="text-align: center;font-weight: 500;background-color: #44546b;padding:20px 0px 20px 0px;flex:0 0 17%;width:17%">
+                <span class="logoarea-top">
+                    PPMS
+                </span>
+                <br>
+                version 1.0
+            </div>
+            <div style="height:100%;width:83%;padding:15px 0px 15px 15px;flex:0 0 83%;display:flex">
+                <div style="width:50%">
+                    @if ((long)ViewData["moduleId"] == 1)
+                    {
+                        <span class="Headerarea-top" id="MainHeader">Finishing line-1</span>
+                        <br>
+                        <div>Plate Punching & Making System</div>
+                    }
+                    else if ((long)ViewData["moduleId"] == 2)
+                    {
+                        <span class="Headerarea-top" id="MainHeader">Finishing line-2</span>
+                        <br>
+                        <div>Plate Punching & Making System</div>
+                    }
+                    else if ((long)ViewData["moduleId"] == 3)
+                    {
+                        <span class="Headerarea-top" id="MainHeader">CTL</span>
+                        <br>
+                        <div>Plate Punching & Making System</div>
+                    }
+                    else if ((long)ViewData["moduleId"] == 4)
+                    {
+                        <span class="Headerarea-top" id="MainHeader">Cold Leveller</span>
+                    }
+                    else if ((long)ViewData["moduleId"] == 5)
+                    {
+                        <span class="Headerarea-top" id="MainHeader">Down Coiler</span>
+                    }
+                </div>
+                <div style=" width:35%">
+                    <p class="headersone2_text">
+                        <label id="lblTime" style="padding-top:10px; padding-right:10px;"></label>
+                        <br>
+                        <span id="UserNameId" style="color: #e5be43;font-size:15px;">
+                            User : @ViewData["username"]
+                        </span>
+                    </p>
+                </div>
+                <div class="headerarea-logout">
+                    <input type="button" onclick="logoutfunc()" class="logoutbtn" />
+                </div>
+
+            </div>
+        </div>
+        <div style="height:89vh;padding:0;flex:0 0 100%;display:flex;width:100%;">
+            <div style="background-color: #44546b;width:17%;flex:0 0 17%;display:block;padding:0 15px 0 15px;min-height:calc(100vh - 125px)">
+                <div class="inactive-sidebar" id="newPlate">
+                    <div>
+                        <input type="button" onclick="OnNewPlateClick()" class="newplate" />
+                    </div>
+                    @if ((long)ViewData["moduleId"] != 5)
+                    {
+                        <p>
+
+                            New Plate
+                        </p>
+                    }
+                    else if ((long)ViewData["moduleId"] == 5)
+                    {
+                        <p>
+
+                            New Coil
+                        </p>
+                    }
+                </div>
+                <div class="inactive-sidebar" id="reports">
+                    <div>
+                        <input type="button" onclick="OnReportsClick()" class="reports" />
+                    </div>
+                    <p>
+                        Reports
+                    </p>
+                </div>
+                @if ((long)ViewData["roleId"] == 1)
+                {
+                    <div class="inactive-sidebar" id="configure">
+                        <div>
+                            <input type="button" onclick="OnConfigureClick()" class="Configure" />
+                        </div>
+                        <p>
+                            Configure
+                        </p>
+                    </div>
+                }
+            </div>
+            <div style="padding:0px;width:83%;flex:0 0 83%">
+                @RenderBody()
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

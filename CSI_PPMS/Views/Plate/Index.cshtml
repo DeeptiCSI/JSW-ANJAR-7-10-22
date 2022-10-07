@@ -1,0 +1,647 @@
+﻿@model LoginResponse
+
+@{
+    ViewData["Title"] = "Home Page";
+    ViewData["username"] = @Model.UserName;
+    ViewData["moduleId"] = @Model.ModuleId;
+    ViewData["roleId"] = @Model.RoleId;
+}
+
+<div>
+    <div style="padding:0;height:13%;flex:0 0 100%">
+        <div class="toparea-container">
+            <div class="plate-no-area" id="PlateNoArea" style="justify-content:flex-start;">
+                @if (Model.ModuleId != 5)
+                {
+                    <p style="max-height:80%" class="plate-text">Enter Plate No</p>
+                }
+                else if (Model.ModuleId == 5)
+                {
+                    <p style="max-height:80%" class="plate-text">Enter Coil No</p>
+
+                }
+                @Html.TextBox("text", "", new { @class = "plate-input", type = "text", id = "txtPlateNo" })
+                @Html.Label("txtplateError", "", new { @class = "text-danger", style = "color:red" })
+                @if (Model.ModuleId != 5)
+                {
+                    <div class="plate-btn-container">
+                        <button class="plate-btn" style="height:35px;" type="button" id="getData">Get Data</button>
+                    </div>
+                }
+                @if (Model.ModuleId != 4)
+                {
+                    <div style="position:absolute;right:2%;">
+                        <label style="background-color:skyblue;width:102%;margin-top:3px;margin-bottom:2px;border-radius:5px;margin-bottom:5px;text-align:center;font-weight:bold" for="ReportSelection">Choose a Template</label>
+                        <br />
+                        <select name="TemplateSelection" id="TemplateSelection" style="width:100%;text-align:center;border-color:black;background-color:gray;color:white;font-weight:500;border-radius:5px">
+                        </select>
+                    </div>
+                }
+            </div>
+            <div class="send-btn-container">
+                @if ((long)ViewData["moduleId"] == 4)
+                {
+                    <button class="punch-btn" style="width:30%" onclick="SendToMarkingColdLeveller()" id="load-button" type="button">Load Data</button>
+                    <button class="plate-btn" style="width:30%;margin-left:10%;height:50%" onclick="YsValueUpdate()" id="load-button" type="button">Update YS Value</button>
+                    <button class="plate-btn" style="width:30%;margin-left:5%;height:50%" onclick="ManualYsValueUpdate()" id="load-button" type="button">Add YS Value</button>
+                }
+                else if ((long)ViewData["moduleId"] != 5 && (long)ViewData["moduleId"] != 4)
+                {
+                    <button id="sendToPunchingbtn" class="punch-btn" onclick="SendToPunching()" type="button">Send to Punching</button>
+                }
+                else
+                {
+                    <div id="AutoModeButtons" style="display:flex;">
+                        <button class="load-btn" onclick="LoadData()" type="button">Start Marking Cycle</button>
+                        <button id="sendDataToPlc" class="load-btn" onclick="FeedDataToPlc()" type="button" disabled>Load Data</button>
+
+
+                    </div>
+                    <div style="position:fixed;right:100px;">
+                        <label style="color:black;font-weight:bold">Auto Mode</label>
+                        <label class="switch">
+                            <input id="DownCoilerAutoModeSwitch" type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                }
+                @if ((long)ViewData["moduleId"] == 1 || (long)ViewData["moduleId"] == 2)
+                {
+                    <button class="market-btn" onclick="SendToMarking()" type="button">Send to Marking</button>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 row" style="height:calc(100% - 100px);margin:0;padding:1px">
+        <div class="col-md-10" id="MainTable" style="height:100%;padding:1px;margin:0px">
+            <div class="col-md-12 row" style="margin:0px;padding:0px">
+                <div id="MainTableDiv" class="col-md-12 row" style="margin:0px;padding:0px">
+                    <table id="customers" style="text-align:left;height:calc(100vh - 300px);overflow-y:scroll">
+                        <thead>
+                            <tr style="text-align:left">
+                                <th width="70px" style="text-align:center">Line</th>
+                                @if ((long)ViewData["moduleId"] == 1 || (long)ViewData["moduleId"] == 2 || (long)ViewData["moduleId"] == 3)
+                                {
+                                    <th width="70px" style="text-align:center">P</th>
+                                }
+                                @if ((long)ViewData["moduleId"] == 1 || (long)ViewData["moduleId"] == 2)
+                                {
+                                    <th width="70px" style="text-align:center">M</th>
+                                }
+                                @if ((long)ViewData["moduleId"] == 5)
+                                {
+                                    <th width="70px" style="text-align:center">D</th>
+                                    <th width="70px" style="text-align:center">S</th>
+                                }
+                                <th width="470px" style="text-align:left">Prefix Text</th>
+                            </tr>
+                        </thead>
+                        <tbody id="platetablebody">
+                        </tbody>
+                    </table>
+                </div>
+                @*                @if (@Model.ModuleId == 5)
+                {
+                <div class="col-md-1 row">
+                </div>
+
+                <div class="col-md-5 row" style="padding-left:30px;border-style: solid;border-width: 2px;border-color: gray;margin:0px;padding:0px">
+                <table id="customers" style="text-align:left;height:calc(100vh - 300px);overflow-y:scroll">
+                <thead>
+                <tr style="text-align:left">
+                <th width="70px" style="text-align:center">Line</th>
+                <th width="70px" style="text-align:center">S</th>
+                <th width="70px" style="text-align:center">D</th>
+                <th width="470px" style="text-align:left">Prefix Text</th>
+                </tr>
+                </thead>
+                <tbody id="childplatetablebody">
+                </tbody>
+                </table>
+                </div>
+                }*@
+            </div>
+
+            <input id="plateno" type="hidden" value="" />
+            <input id="moduleId" type="hidden" value="@Model.ModuleId" />
+            <input id="roleId" type="hidden" value="@Model.RoleId" />
+            <input id="userId" type="hidden" value="@Model.UserName" />
+            <input id="UserLoginId" type="hidden" value="@Model.UserId" />
+            <div class="footer-area" id="lblmessages">
+            </div>
+        </div>
+
+        <div class="col-md-2" style="margin:0;padding:1px;position:relative" id="left-section">
+
+            @if ((long)ViewData["moduleId"] == 5)
+            {
+
+                <div class="plate-btn-container">
+                    @if ((long)ViewData["moduleId"] != 4)
+                    {
+                        <button class="plate-btn" onclick="RefreshChecks()" style="height:35px;" type="button" id="Refresh">Refresh</button>
+                    }
+                </div>
+            }
+            @if ((long)ViewData["moduleId"] != 5)
+            {
+                <div class="purchesingstatus">
+                    <div class="punching-container">
+                        @if (Model.ModuleId != 4)
+                        {
+                            <p style="margin:2px">Punching Status</p>
+                        }
+                        else
+                        {
+                            <p style="margin:2px">JSW DB Load Status</p>
+                        }
+                        <div class="completed-box">
+                            <p id="punchingStatusDisplay">
+                                idle
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+
+            }
+            else
+            {
+
+
+            }
+            @if ((long)ViewData["moduleId"] == 1 || (long)ViewData["moduleId"] == 2)
+            {
+                <div class="makingstatus">
+                    <div class="makingstatus-container">
+                        <p style="margin:2px">Marking Status</p>
+                        <div class="not-started-box">
+                            <p id="markingStatusDisplay">
+                                Not Started
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @if (@Model.ModuleId == 2)
+                {
+
+                    <div class="purchesingstatus" style="left:55px;margin-top:80%">
+                        <div class="punching-container">
+                            <p style="margin:2px">Machine Mode</p>
+                            <div class="completed-box">
+                                <p id="modeTag">
+
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="purchesingstatus" style="left:55px">
+                        <div class="punching-container">
+                            <p style="margin:2px">Machine Sequence</p>
+                            <div class="completed-box">
+                                <p id="sequenceTag">
+
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+            }
+
+        </div>
+    </div>
+</div>
+
+<template id="manualModeTemplate">
+    <div id="manualModetemp">
+        @*<button class="plate-btn" style="height:35px;margin-top:5%" type="button" onclick="GetWeightDataDC()" id="Refresh">Get Weight Data</button>*@
+        <div class="loadStatus">
+            <div class="makingstatus-container">
+                <p style="margin:2px">Weight</p>
+                <div class="not-started-box">
+                    <p id="WeigthBox">Idle</p>
+                </div>
+            </div>
+        </div>
+        <button class="plate-btn" style="height:35px;margin-top:5%" type="button" id="Update-Weight">Update Weight</button>
+        <button class="plate-btn" style="height:35px;margin-top:5%" onclick="ManualWeightUpdateTemp()" type="button" id="Manual-Update-Weight">Manual Update Weight</button>
+        <input id="MatIdDC" type="hidden" value="" />
+    </div>
+</template>
+
+<template id="manualWeightUpdateTemp">
+    <div id="manualUpdateTempnew" style="background-color:lightblue;margin:5% 0 0 0">
+        <h4 style="padding: 5%; font-weight: 300; text-align: center; ">Manual Weight Update</h4>
+        <div style="height:95%">
+            <div id="CoilIdDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="CoilId" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Coil Id</p>
+                <input id="CoilIdText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div id="WeightDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="WeightLbl" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Weight</p>
+                <input id="WeightText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <button id="AddWeightData" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="UpdateWeightDataManual()">Add</button>
+                <button id="WeightDataCancel" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="CancelWeightUpdate()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+
+<template id="weightDataUpdateTemplate">
+    <div class="loadStatus">
+        <div class="makingstatus-container">
+            <p style="margin:2px">weight Data Oracle</p>
+            <div class="not-started-box">
+                <p>
+                    updated
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="loadStatus">
+        <div class="makingstatus-container">
+            <p style="margin:2px">weight data SAP</p>
+            <div class="not-started-box">
+                <p>
+                    updated
+                </p>
+            </div>
+        </div>
+    </div>
+
+</template>
+
+
+<template id="autoModeTemplate">
+    <div id="autoModeTemp">
+        <div style="background-color:black;height:2px;margin:4px">
+            <br />
+        </div>
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Mat Id</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCMatIdBox">
+                        --
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Position</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCPosition">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div style="background-color:black;height:2px;margin:4px">
+            <br />
+        </div>
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Live Weight</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:150px">
+                    <p id="DCLiveWeight">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div style="background-color:black;height:2px;margin:4px">
+            <br />
+        </div>
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Machine Mode</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:150px">
+                    <p id="DCMachineMode">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Marker Position</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCMarkerPosition">
+                        --
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Marker Fault</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCMarkerFault">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Marker Ready</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCMarkerReady">
+                        --
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Marker Active</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCMarkerActive">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-around">
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Cycle Status</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCCycleStatus">
+                        --
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+                <p style="margin:2px;font-size:14px;font-weight:600">Aborted Status</p>
+                <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:100px">
+                    <p id="DCAbourtStatus">
+                        --
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color:black;height:2px;margin:4px">
+            <br />
+        </div>
+    </div>
+</template>
+
+<template id="automodestatusboxes">
+    <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+        <p style="margin:2px">Weighing Status</p>
+        <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:140px">
+            <p style="font-size:14px;text-align:center;margin-top:10px" id="DCWeighingStatusBox">
+                --
+            </p>
+        </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;margin:0 5px">
+        <p style="margin:2px">Marking Status</p>
+        <div style="display:flex;justify-content:center;align-items:center;background-color:rgb(255, 244, 210);border:2px solid blue;height:45px;width:140px">
+            <p style="font-size:14px;text-align:center;margin-top:10px" id="DCMarkingStatusBox">
+                --
+            </p>
+        </div>
+    </div>
+</template>
+
+<template id="YSForm">
+    <div id="newForm" style=" width: 140%; background-color: lightblue; position: absolute; bottom: 30%; margin: 5px; border-radius: 10px; border-style: solid; border-color: lightgray; border-width: 3px; ">
+        <h4 style="padding: 5%; font-weight: 600; text-align: center; ">Grade Specification</h4>
+        <div style="height:95%">
+            <div id="gradeDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="grade" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Grade</p>
+                <input id="gradeText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div id="MinThicknessDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="MinThickness" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Min Thickness</p>
+                <input id="MinThicknessText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div id="MaxThicknessDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="MaxThickness" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Max Thickness</p>
+                <input id="MaxThicknessText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div id="YSValueDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="YSValue" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">YS Value</p>
+                <input id="YSValueText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <button id="yssubmit" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="YSValueUpdatedemo(1)">Add</button>
+                <button id="yssubmit" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="CancelUpdatedemo()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+
+<template id="UpdateYSForm">
+    <div id="newForm" style=" width: 140%; background-color: lightblue; position: absolute; bottom: 30%; margin: 5px; border-radius: 10px; border-style: solid; border-color: lightgray; border-width: 3px; ">
+        <h4 style="padding: 5%; font-weight: 600; text-align: center; ">Grade Specification</h4>
+        <div style="height:95%">
+            <div id="gradeDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="grade" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">Grade</p>
+                <input id="gradeText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div id="YSValueDiv" style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <p id="YSValue" style="width: 30%; background-color: lightblue; border: none; margin-left: 10px; font-weight: bold; ">YS Value</p>
+                <input id="YSValueText" type="text" spellcheck="false" data-ms-editor="true" style="width: 55%; margin-right: 10px; height: 70%; border-radius: 4px; border-width: 3px; border-style: double; ">
+            </div>
+            <div style="display: flex; justify-content: space-between; margin: 5px 0px; height:20%">
+                <button id="yssubmit" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="YSValueUpdatedemo(2)">Update</button>
+                <button id="yssubmit" style="height: 70%; width: 40%; margin: auto; display: block; background-color: deepskyblue; border-style: solid; border-radius: 8px;" onclick="CancelUpdatedemo()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+
+
+<script>
+    function OnReportsClick() {
+        window.location.href = '/Reports/Reports?UserName=@Model.UserName&ModuleId=@Model.ModuleId&RoleId=@Model.RoleId&UserId=@Model.UserId';
+    }
+
+    function OnConfigureClick() {
+        window.location.href = '/Configure/Configure?UserName=@Model.UserName&ModuleId=@Model.ModuleId&RoleId=@Model.RoleId&UserId=@Model.UserId';
+    }
+
+    function GetModuleId() {
+        return @Model.ModuleId;
+    }
+
+    $(document).ready(function () {
+
+        if (@Model.ModuleId == 5) {
+            document.getElementById("PlateNoArea").style = "width:40%"
+            //var mainTableDiv = document.getElementById("MainTableDiv");
+            //mainTableDiv.className = "col-md-6 row";
+            //mainTableDiv.style = "border-style: solid;border-width: 2px;border-color: gray;margin:0px;padding:0px;"
+        }
+        $('#newPlate')[0].className = "active-sidebar";
+        $('#reports')[0].className = "inactive-sidebar";
+        if ($('#configure')[0] != undefined) {
+            $('#configure')[0].className = "inactive-sidebar";
+        }
+        document.getElementById("moduleId").innerHTML = @Model.ModuleId;
+        document.getElementById("roleId").innerHTML = @Model.RoleId;
+        var markstat = $('.makingstatus-container')[0];
+        if (markstat != undefined) {
+            markstat = markstat.childNodes[3];
+            markstat = markstat.childNodes[1];
+            markstat.textContent = "IDLE";
+        }
+
+        //if ('@Model.ModuleId' == 5) {
+        //    var x = document.getElementsByClassName("plate-btn-container")[0];
+        //    var xx = x.children[0];
+        //    xx.parentNode.removeChild(xx);
+        //}
+
+        if (@Model.ModuleId != 4) {
+
+            $.ajax({
+                url: "/Plate/GetTemplateDropDown?ModuleId=@Model.ModuleId",
+                type: "GET",
+                success: function (data) {
+                    var dropDown = document.getElementById("TemplateSelection");
+                    $.each(data, function (index, value) {
+                        var newOption = document.createElement("option");
+                        newOption.style = "width:100%;text-align:center;border-color:black;background-color:gray;color:white;font-weight:500;border-radius:5px";
+                        newOption.id = value.id;
+                        newOption.value = value.id;
+                        newOption.innerHTML = value.templateName;
+                        dropDown.appendChild(newOption);
+                    });
+                    if ('@Model.ModuleId' != 5) {
+                        var puncstat = $('.punching-container')[0].childNodes[3].childNodes[1];
+                        puncstat.textContent = "IDLE";
+                        GetPlateData(@Model.RoleId, @Model.ModuleId);
+                        if (@Model.ModuleId == 2) {
+                            GetSequenceMode();
+                        }
+                    }
+                }
+
+            });
+        }
+        else {
+            GetPlateData(@Model.RoleId, @Model.ModuleId);
+        }
+
+        //if ('@Model.ModuleId' != 5) {
+        //    var puncstat = $('.punching-container')[0].childNodes[3].childNodes[1];
+        //    puncstat.textContent = "IDLE";
+        //    GetPlateData(@Model.RoleId, @Model.ModuleId);
+        //}
+
+
+
+    });
+
+
+
+
+
+
+    $('#TemplateSelection').change(function (e) {
+        //if (@Model.ModuleId != 5) {
+        GetPlateData(@Model.RoleId, @Model.ModuleId);
+        //}
+        //else {
+        //    AddTemplateLines(@Model.RoleId, @Model.ModuleId);
+        //}
+        makeDefaultTemplateData = { TemplateId: document.getElementById("TemplateSelection").value, ModeuleId: @Model.ModuleId  };
+        $.ajax({
+            url: "/Plate/MakeTemplateDefault",
+            type: "POST",
+            data: makeDefaultTemplateData
+        });
+        var userName = document.getElementById("userId").value;
+        var modid = document.getElementById("moduleId").value;
+        var type = "normal";
+        var log = "template selection changed by" + userName
+        AddLog(userName, modid, log, type);
+    })
+
+
+
+
+    $("#getData").click(function (e) {
+        document.getElementById('lblmessages').innerHTML += '\n<p style="margin-bottom:5px">' + GetCurrentDate() + " &lt;" + document.getElementById("UserNameId").innerText + "&gt; " + 'Fetching Data from SAP</p>';
+        document.getElementsByClassName('footer-area')[0].scrollTop = document.getElementsByClassName('footer-area')[0].scrollHeight;
+        GetPlateData(@Model.RoleId, @Model.ModuleId);
+    })
+
+    function YSValueUpdatedemo(type) {
+        YSValueUpdate(@Model.RoleId, @Model.ModuleId, type);
+    }
+
+
+    function YsValueUpdate() {
+        var maintable = document.getElementById("MainTable");
+        maintable.style = "max-width:75%;margin-right:0px";
+        var ysform = $('#UpdateYSForm').html();
+
+        var leftSection = document.getElementById("left-section");
+
+        if (document.getElementById("newForm") == undefined) {
+            leftSection.innerHTML += ysform;
+        }
+
+        //$('#yssubmit').click(function (e) {
+        //    YSValueUpdate(roleId, moduleId,2);
+        //});
+    }
+
+
+    function ManualYsValueUpdate() {
+        var maintable = document.getElementById("MainTable");
+        maintable.style = "max-width:75%;margin-right:0px";
+        var ysform = $('#YSForm').html();
+
+        var leftSection = document.getElementById("left-section");
+
+        if (document.getElementById("newForm") == undefined) {
+            leftSection.innerHTML += ysform;
+        }
+        var platNo = document.getElementById("plateno").value;
+        $.ajax({
+            url: "/SAP/GetGrade?plateNo=" + platNo,
+            method: "GET",
+            success: function (grade) {
+                gradeText.value = grade;
+            }
+        });
+        //$('#yssubmit').click(function (e) {
+        //    YSValueUpdate(roleId, moduleId,1);
+        //});
+    }
+
+    function CancelUpdatedemo() {
+        if (document.getElementById("newForm") != undefined) {
+            document.getElementById("newForm").remove();
+        }
+        var maintable = document.getElementById("MainTable");
+        maintable.style = "height:100%;padding:1px;margin:0px";
+    }
+
+    function GetPlateDataDC() {
+        LoadData();
+    }
+
+    function RefreshChecks() {
+        $.ajax("/Plate/RefreshChecks"),
+        {
+            type: "GET",
+        }
+        GetPlateData(@Model.RoleId, @Model.ModuleId);
+    }
+
+
+
+
+
+</script>
+

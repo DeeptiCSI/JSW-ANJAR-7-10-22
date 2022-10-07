@@ -1,0 +1,198 @@
+﻿@model LoginResponse
+
+@{
+    ViewData["Title"] = "Reports";
+    ViewData["username"] = @Model.UserName;
+    ViewData["moduleId"] = @Model.ModuleId;
+    ViewData["roleId"] = @Model.RoleId;
+}
+
+<div style="height:100%">
+    <div style="margin:0px;padding:0px;height:100%;width:100%;flex:0 0 100%">
+        <div style="background-color:steelblue;padding:0;height:15vh;border-style:solid;border-width:2px;width:100%;flex:0 0 100%">
+            <div style="margin-left:10px;height:100%;width:100%;display:flex;flex-wrap:wrap;flex:0 0 100%">
+                <div style="padding-top:2px;width:40%">
+                    <div style="width:50%;flex:0 0 50%">
+                        <label style="background-color:skyblue;width:102%;margin-top:3px;margin-bottom:2px;border-radius:5px;margin-bottom:5px;text-align:center;font-weight:bold" for="ReportSelection">Choose a Report</label>
+                        <br />
+                        <select name="ReportSelection" id="ReportSelection" style="width:100%;text-align:center;border-color:black;background-color:gray;color:white;font-weight:500;border-radius:5px">
+                            @if (@Model.ModuleId == 1 || @Model.ModuleId == 2)
+                            {
+                                <option value="Marking-Report">Marking Report</option>
+                            }
+                            @if (@Model.ModuleId == 1 || @Model.ModuleId == 2 || @Model.ModuleId == 3)
+                            {
+                                <option value="Punching-Report">Punching Report</option>
+                            }
+                            @if (@Model.ModuleId == 4)
+                            {
+                                <option value="Cold-Leveller">ColdLeveller Report</option>
+                            }
+                            @if (@Model.ModuleId == 5)
+                            {
+                                <option value="Down-Coiler">Downcoiler Report</option>
+                                <option value="WeightUpdateReport">Weight Update Report</option>
+                            }
+                            <option value="Audit-Report">Audit Report</option>
+                        </select>
+                        <input type="button" value="Download Excel" onclick="DownloadReport()" style="border-radius:5px;margin-top:5px;width:102%;background-color:lightslategray" />
+                    </div>
+                </div>
+                <div style="float:right;padding-top:15px;width:15%;flex:0 0 15%">
+                    <button id="GetRepost">Get Report</button>
+                </div>
+                <div style="float:right;padding-top:15px;width:20%">
+                    <label for="From-Date" style="font-weight:bold">From Date:</label>
+                    <input type="date" id="From-Date" name="fromDate" style="background-color:lightslategray;border-radius:5px;">
+                </div>
+                <div style="float:right;padding-top:15px;width:20%">
+                    <label for="To-Date" style="font-weight:bold">To Date:</label>
+                    <input type="date" id="To-Date" name="toDate" style="background-color:lightslategray;border-radius:5px">
+                </div>
+            </div>
+            <input type="hidden" id="RoleId" title="@Model.RoleId" />
+            <input type="hidden" id="ModuleId" title="@Model.ModuleId" />
+        </div>
+        <div class="col-md-12" style="padding:0px;display:block;height:calc(100% - 15vh)">
+            <table id="ReportsTable" class="reportstable" style="text-align: left; overflow: scroll;height:95%">
+                <tbody id="PunchingDataReportBody">
+                </tbody>
+            </table>
+            <div style="display:flex;justify-content:flex-end;align-items:center">
+                <label style="font-weight:200;margin:0px 10px">Items Per Page</label>
+                <select id="PageSize" contenteditable="true" style="width:3%;text-align:center;border-color:black;background-color:gray;color:white;font-weight:200;border-radius:5px;margin:5px 2px">
+                    <option>10</option>
+                    <option>20</option>
+                    <option>50</option>
+                    <option>100</option>
+                    <option>500</option>
+                    <option>all</option>
+                </select>
+                <label style="font-weight:200;margin:0px 10px"><span id="currentPageNo">0</span> of <span id="totalPages">0</span></label>
+                <button id="prvbtn" style="background-color: gray;color: white;border-radius: 50%;width:30px;height:30px;padding:0px;font-weight:900" disabled>&#8249;</button>
+                <button id="nextbtn" style="background-color: gray;color: white;border-radius: 50%;width:30px;height:30px;margin-left:5px;margin-right:5px;font-weight:900" disabled>&#8250;</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    //$('#ReportSelection').change(function(e) {
+    //    var dropdownValue = $(this).val();
+    //    var fromDate = document.getElementById("From-Date").value;
+    //    var Todate = document.getElementById("To-Date").value;
+    //    if (dropdownValue == "Marking-Report") {
+    //        markingReports(fromDate, Todate);
+    //    }
+    //    else if (dropdownValue == "Punching-Report") {
+    //        punchingReports(fromDate, Todate);
+    //    }
+    //});
+
+    //$('#From-Date').change(function(e) {
+    //    var dropdownValue = document.getElementById('ReportSelection').value;
+    //    var fromDate = document.getElementById("From-Date").value;
+    //    var Todate = document.getElementById("To-Date").value;
+    //    if (dropdownValue == "Marking-Report") {
+    //        markingReports(fromDate, Todate);
+    //    }
+    //    else if (dropdownValue == "Punching-Report") {
+    //        punchingReports(fromDate, Todate);
+    //    }
+    //})
+
+    //$('#To-Date').change(function(e) {
+    //    var dropdownValue = document.getElementById('ReportSelection').value;
+    //    var fromDate = document.getElementById("From-Date").value;
+    //    var Todate = document.getElementById("To-Date").value;
+    //    if (dropdownValue == "Marking-Report") {
+    //        markingReports(fromDate, Todate);
+    //    }
+    //    else if (dropdownValue == "Punching-Report") {
+    //        punchingReports(fromDate, Todate);
+    //    }
+    //})
+
+    $('#GetRepost').click(function (e) {
+        GetReport(1);
+    });
+
+
+    function GetReport(type) {
+        var dropdownValue = document.getElementById('ReportSelection').value;
+        var fromDate = document.getElementById("From-Date").value;
+        var Todate = document.getElementById("To-Date").value;
+        var pageSize = 0;
+        if (document.getElementById("PageSize").value != "all") {
+            pageSize = document.getElementById("PageSize").value;
+        };
+        var pageIndex = 0;
+        if (type == 1) {
+            pageIndex = 0;
+        }
+        else if (type == 2) {
+            pageIndex = Number(document.getElementById("currentPageNo").innerHTML);
+        }
+        else if (type == 3) {
+            pageIndex = Number(document.getElementById("currentPageNo").innerHTML) - 2;
+        }
+        if (dropdownValue == "Marking-Report") {
+            markingReports(fromDate, Todate, pageSize, pageIndex);
+        }
+        else if (dropdownValue == "Punching-Report") {
+            punchingReports(fromDate, Todate, pageSize, pageIndex);
+        }
+        else if (dropdownValue == "Cold-Leveller") {
+            ColdLevellerReports(fromDate, Todate, pageSize, pageIndex);
+        }
+        else if (dropdownValue == "Down-Coiler") {
+            DownCoilerReports(fromDate, Todate, pageSize, pageIndex);
+        }
+        else if (dropdownValue == "Audit-Report") {
+            AuditReport(fromDate, Todate, pageSize, pageIndex);
+        }
+        else if (dropdownValue == "WeightUpdateReport") {
+            WeightUpdateReport(fromDate, Todate, pageSize, pageIndex)
+        }
+    }
+
+    $('#nextbtn').click(function (e) {
+        GetReport(2);
+    });
+
+    $('#prvbtn').click(function (e) {
+        GetReport(3);
+    });
+    //$('#GetRepost').click(function() {
+    //    var x = new Date();
+    //    var month = x.getMonth();
+    //    month = (month.toLocaleString().length == 1) ? ("0" + x.getMonth()) : x.getMonth();
+    //    var date = x.getDate();
+    //    date = (date.toLocaleString().length == 1) ? ("0" + x.getDate()) : x.getDate();
+    //    var fromDate = x.getFullYear() + "-" + month + "-" + date;
+    //    var toMonth = x.getMonth() + 1;
+    //    toMonth = toMonth.toLocaleString().length == 1 ? "0" + toMonth : toMonth;
+    //    var toDate = x.getFullYear() + "-" + toMonth + "-" + date;
+    //    document.getElementById("From-Date").defaultValue = fromDate;
+    //    document.getElementById("To-Date").defaultValue = toDate;
+    //    var fromDate = document.getElementById("From-Date").value;
+    //    var Todate = document.getElementById("To-Date").value;
+    //    markingReports(fromDate, Todate);
+    //})
+
+    $(document).ready(function () {
+        $('#newPlate')[0].className = "inactive-sidebar";
+        $('#reports')[0].className = "active-sidebar";
+        if ($('#configure')[0] != undefined) {
+            $('#configure')[0].className = "inactive-sidebar";
+        }
+
+    });
+
+    function OnConfigureClick() {
+        window.location.href = '/Configure/Configure?UserName=@Model.UserName&ModuleId=@Model.ModuleId&RoleId=@Model.RoleId&UserId=@Model.UserId';
+    }
+
+    function OnNewPlateClick() {
+        window.location.href = '/Plate/Index?UserName=@Model.UserName&ModuleId=@Model.ModuleId&RoleId=@Model.RoleId&UserId=@Model.UserId';
+    }
+</script>
